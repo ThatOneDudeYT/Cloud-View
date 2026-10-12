@@ -1,5 +1,6 @@
 let currentIndex = 0;
 let desktops = [];
+let pollInterval = null;
 
 // DOM Elements
 const carousel = document.getElementById('carousel');
@@ -11,36 +12,84 @@ const viewToggleBtn = document.getElementById('viewToggleBtn');
 const kbToggleBtn = document.getElementById('kbToggleBtn');
 const closeKbBtn = document.getElementById('closeKbBtn');
 const keyboardDrawer = document.getElementById('keyboardDrawer');
+const statusIndicator = document.getElementById('statusIndicator');
 
-// Fetch uploaded desktops or fallback to placeholders
-async function loadDesktops() {
+// Expose selectDesktop to window so HTML onclick attributes always find it
+window.selectDesktop = function (index) {
+  currentIndex = index;
+  updateCarousel();
+  gridView.classList.remove('view-active');
+  singleView.classList.add('view-active');
+  viewToggleBtn.textContent = 'Grid Overview';
+};
+
+// Fetch desktops from Render API
+async function loadDesktops(isPolling = false) {
   try {
     const res = await fetch('/api/desktops');
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    
     const data = await res.json();
+
     if (data.desktops && data.desktops.length > 0) {
-      desktops = data.desktops.map(f => `/desktops/${f}`);
-    } else {
-      // Fallback demo mockups matching your magenta/purple screenshot
+      const newDesktops = data.desktops.map(file => `/desktops/${file}`);
+      
+      // Update status banner with latest sync time
+      if (statusIndicator) {
+        const timeStr = new Date().toLocaleTimeString();
+        statusIndicator.textContent = `Synced: ${timeStr} (${data.desktops.length} display${data.desktops.length > 1 ? 's' : ''})`;
+        statusIndicator.style.color = '#4ade80'; // soft green
+      }
+
+      // If the list changed or it's the initial load, rebuild the layout
+      if (JSON.stringify(desktops) !== JSON.stringify(newDesktops)) {
+        desktops = newDesktops;
+        renderUI();
+      } else if (isPolling) {
+        // Just refresh the image sources with a timestamp to bust browser cache
+        refreshImagesInPlace();
+      }
+    } else if (!isPolling) {
+      // Fallback demo mockups if no desktop has been uploaded yet
       desktops = [
         "https://picsum.photos/1920/1080?random=1",
-        "https://picsum.photos/1920/1080?random=2",
-        "https://picsum.photos/1920/1080?random=3"
+        "https://picsum.photos/1920/1080?random=2"
       ];
+      if (statusIndicator) {
+        statusIndicator.textContent = "Waiting for first PC upload...";
+        statusIndicator.style.color = '#facc15'; // yellow
+      }
+      renderUI();
     }
   } catch (err) {
-    desktops = [
-      "https://picsum.photos/1920/1080?random=1",
-      "https://picsum.photos/1920/1080?random=2"
-    ];
+    if (!isPolling) {
+      console.warn("Could not reach /api/desktops, using fallback images:", err);
+      desktops = [
+        "https://picsum.photos/1920/1080?random=1",
+        "https://picsum.photos/1920/1080?random=2"
+      ];
+      renderUI();
+    }
   }
-  renderUI();
+}
+
+// Refresh image elements without rebuilding the DOM
+function refreshImagesInPlace() {
+  const timestamp = Date.now();
+  document.querySelectorAll('#carousel img, #stackContainer img').forEach((img, i) => {
+    if (desktops[i]) {
+      img.src = `${desktops[i]}?t=${timestamp}`;
+    }
+  });
 }
 
 function renderUI() {
+  const timestamp = Date.now();
+
   // Render Carousel slides
   carousel.innerHTML = desktops.map((src, i) => `
     <div class="desktop-slide">
-      <img src="${src}?t=${Date.now()}" alt="Desktop ${i + 1}" draggable="false" />
+      <img src="${src}?t=${timestamp}" alt="Desktop ${i + 1}" draggable="false" />
     </div>
   `).join('');
 
@@ -49,11 +98,11 @@ function renderUI() {
     <div class="dot ${i === currentIndex ? 'active' : ''}"></div>
   `).join('');
 
-  // Render Grid/Stacked View
+  // Render Grid / Stacked Overview
   stackContainer.innerHTML = desktops.map((src, i) => `
     <div class="stack-card" onclick="selectDesktop(${i})">
       <div class="stack-label">Desktop Screen #${i + 1}</div>
-      <img src="${src}?t=${Date.now()}" alt="Desktop ${i + 1}" />
+      <img src="${src}?t=${timestamp}" alt="Desktop ${i + 1}" />
     </div>
   `).join('');
 
@@ -67,15 +116,7 @@ function updateCarousel() {
   });
 }
 
-function selectDesktop(index) {
-  currentIndex = index;
-  updateCarousel();
-  gridView.classList.remove('view-active');
-  singleView.classList.add('view-active');
-  viewToggleBtn.textContent = '📱 Grid Overview';
-}
-
-// Touch Swiping logic
+// Touch Swiping logic for mobile
 let touchStartX = 0;
 let touchEndX = 0;
 
@@ -100,22 +141,38 @@ function handleSwipe() {
   }
 }
 
-// Toggle View button
+// Grid vs Single View Toggle
 viewToggleBtn.addEventListener('click', () => {
   const isGrid = gridView.classList.contains('view-active');
   if (isGrid) {
     gridView.classList.remove('view-active');
     singleView.classList.add('view-active');
-    viewToggleBtn.textContent = '📱 Grid Overview';
+    viewToggleBtn.textContent = 'Grid Overview';
   } else {
     singleView.classList.remove('view-active');
     gridView.classList.add('view-active');
-    viewToggleBtn.textContent = '🖥️ Fullscreen';
+    viewToggleBtn.textContent = 'Fullscreen';
   }
 });
 
-// Virtual Keyboard Toggles
+// Virtual Keyboard Drawer
 kbToggleBtn.addEventListener('click', () => keyboardDrawer.classList.toggle('open'));
 closeKbBtn.addEventListener('click', () => keyboardDrawer.classList.remove('open'));
 
-loadDesktops();
+// Visual feedback when pressing virtual keyboard keys
+document.querySelectorAll('.key').forEach(key => {
+  key.addEventListener('click', () => {
+    key.style.transform = 'translateY(2px)';
+    setTimeout(() => {
+      key.style.transform = '';
+    }, 120);
+  });
+});
+
+// Initial run
+loadDesktops(false);
+
+// Auto-poll Render every 10 seconds for updated monitor snapshots
+pollInterval = setInterval(() => {
+  loadDesktops(true);
+}, 10000);
