@@ -8,7 +8,7 @@ import mss
 RENDER_URL = "https://cloud-view.onrender.com/api/upload"
 
 # Must match the API_SECRET environment variable set in your Render dashboard
-API_KEY = "Emmet2239"
+API_KEY = "Emmett2239"
 
 # Sync interval in seconds (if running continuously)
 SYNC_INTERVAL = 15
