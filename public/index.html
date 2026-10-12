@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Desktop Cloud Viewer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top toolbar -->
+  <header class="toolbar">
+    <button id="viewToggleBtn" class="pill-btn">📱 Grid Overview</button>
+    <div id="statusIndicator" class="status">PC Offline (Viewing Synced Cloud State)</div>
+    <button id="kbToggleBtn" class="pill-btn">⌨️ Keyboard</button>
+  </header>
+
+  <!-- Single / Swipeable Landscape View -->
+  <main id="singleView" class="view-active">
+    <div class="carousel-container" id="carousel">
+      <!-- Desktop images dynamically inserted here -->
+    </div>
+    
+    <div class="swipe-hint" id="swipeHint">
+      <span>Swipe left / right to switch desktops</span>
+    </div>
+    
+    <div class="indicator-dots" id="dotsContainer"></div>
+  </main>
+
+  <!-- Portrait "All Desktop View" -->
+  <section id="gridView" class="grid-view">
+    <h2 class="grid-title">All Desktop View</h2>
+    <div class="desktop-stack" id="stackContainer">
+      <!-- Stacked desktops dynamically inserted here -->
+    </div>
+  </section>
+
+  <!-- Virtual On-Screen Keyboard Overlay -->
+  <div id="keyboardDrawer" class="keyboard-drawer">
+    <div class="keyboard-header">
+      <span>On-Screen Keyboard</span>
+      <button id="closeKbBtn">✕</button>
+    </div>
+    <div class="keyboard-grid">
+      <!-- Function Row -->
+      <div class="kb-row">
+        <button class="key">ESC</button>
+        <button class="key">F1</button><button class="key">F2</button><button class="key">F3</button>
+        <button class="key">F4</button><button class="key">F5</button><button class="key">F6</button>
+        <button class="key">F7</button><button class="key">F8</button><button class="key">F9</button>
+        <button class="key">F10</button><button class="key">F11</button><button class="key">F12</button>
+      </div>
+      <!-- Number Row -->
+      <div class="kb-row">
+        <button class="key">`</button><button class="key">1</button><button class="key">2</button>
+        <button class="key">3</button><button class="key">4</button><button class="key">5</button>
+        <button class="key">6</button><button class="key">7</button><button class="key">8</button>
+        <button class="key">9</button><button class="key">0</button><button class="key">-</button>
+        <button class="key">=</button><button class="key backspace">BKSP</button>
+      </div>
+      <!-- QWERTY -->
+      <div class="kb-row">
+        <button class="key tab">TAB</button>
+        <button class="key">Q</button><button class="key">W</button><button class="key">E</button>
+        <button class="key">R</button><button class="key">T</button><button class="key">Y</button>
+        <button class="key">U</button><button class="key">I</button><button class="key">O</button>
+        <button class="key">P</button><button class="key">[</button><button class="key">]</button>
+      </div>
+      <!-- ASDF -->
+      <div class="kb-row">
+        <button class="key capslock">CAPS</button>
+        <button class="key">A</button><button class="key">S</button><button class="key">D</button>
+        <button class="key">F</button><button class="key">G</button><button class="key">H</button>
+        <button class="key">J</button><button class="key">K</button><button class="key">L</button>
+        <button class="key">;</button><button class="key">'</button>
+        <button class="key enter">ENTER</button>
+      </div>
+      <!-- ZXCV -->
+      <div class="kb-row">
+        <button class="key shift">SHIFT</button>
+        <button class="key">Z</button><button class="key">X</button><button class="key">C</button>
+        <button class="key">V</button><button class="key">B</button><button class="key">N</button>
+        <button class="key">M</button><button class="key">,</button><button class="key">.</button>
+        <button class="key">/</button><button class="key shift">SHIFT</button>
+      </div>
+      <!-- Bottom Control Row -->
+      <div class="kb-row">
+        <button class="key">CTRL</button><button class="key">WIN</button><button class="key">ALT</button>
+        <button class="key space">SPACE</button>
+        <button class="key">ALT</button><button class="key">CTRL</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
